@@ -1,13 +1,7 @@
 # `vp lint` runs an oxlint from a parent directory
 
-`app/` is a Vite+ project (`vite-plus` 1.2.0). It does not install `oxlint`
-itself. The folder above it stands for a parent checkout (for example the main
-checkout that holds a git worktree): it has its own `node_modules/oxlint`
-(1.60.0) and its own `.oxlintrc.json`.
-
-`vp lint` should run the oxlint that `vite-plus` ships (1.88.0). It runs the
-parent's 1.60.0 instead. That old oxlint then also applies the parent's
-`.oxlintrc.json`, so the `lint.overrides` in `app/vite.config.ts` are ignored.
+- `app/`: Vite+ project (`vite-plus` 1.2.0), no `oxlint` of its own. `vite.config.ts` turns `no-debugger` off for `src/legacy/**`.
+- Parent folder: `node_modules/oxlint` 1.60.0 + its own `.oxlintrc.json` (stands for e.g. the main checkout around a git worktree).
 
 ## Run
 
@@ -22,23 +16,18 @@ pnpm install            # app: vite-plus 1.2.0
 
 ## Expected
 
-- `vp lint --version` prints `Version: 1.88.0`.
-- `vp lint src` reports one error, in `src/new.js`. The override turns
-  `no-debugger` off for `src/legacy/**`.
+- `--version`: `Version: 1.88.0` (the bundled oxlint).
+- `vp lint src`: 1 error, `src/new.js`.
 
 ## Actual
 
-- `vp lint --version` prints `Version: 1.60.0`.
-- `vp lint src` reports two errors: `src/new.js` and `src/legacy/old.js`.
-- `vp lint -c vite.config.ts src` reports one error, as expected, because
-  `--config` turns off nested config discovery.
-
-Delete the parent's `node_modules` and `vp lint src` reports one error again.
+- `--version`: `Version: 1.60.0` (the parent's).
+- `vp lint src`: 2 errors, `src/new.js` + `src/legacy/old.js` — the override is ignored.
+- `-c vite.config.ts`: 1 error (`--config` turns off nested config lookup).
+- Delete the parent's `node_modules` → 1 error again.
 
 ## Versions
 
-- vite-plus 1.2.0 (latest on npm), oxlint 1.88.0 (shipped with it)
-- oxlint 1.60.0 in the parent directory. The overrides are ignored with a
-  parent oxlint up to 1.61.0; from 1.62.0 they apply, but `vp lint` still runs
-  the parent's oxlint.
-- Node 24.17.0, pnpm 12.11.2, Linux x64
+- vite-plus 1.2.0 (bundles oxlint 1.88.0).
+- Parent oxlint 1.60.0. Up to 1.61.0 the overrides are ignored; from 1.62.0 they apply, but the parent's oxlint still runs.
+- Node 24.17.0, pnpm 12.11.2, Linux x64. Also reproduced on Windows.
